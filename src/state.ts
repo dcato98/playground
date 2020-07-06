@@ -11,6 +11,8 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
+
+Modified by David Cato
 ==============================================================================*/
 
 import * as nn from "./nn";
@@ -25,7 +27,8 @@ export let activations: {[key: string]: nn.ActivationFunction} = {
   "tanh": nn.Activations.TANH,
   "sigmoid": nn.Activations.SIGMOID,
   "linear": nn.Activations.LINEAR,
-  "sine": nn.Activations.SINE
+  "sine": nn.Activations.SINE,
+  "mish": nn.Activations.MISH
 };
 
 /** A map between names and regularization functions. */

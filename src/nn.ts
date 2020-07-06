@@ -11,6 +11,8 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
+
+Modified by David Cato
 ==============================================================================*/
 
 /**
@@ -110,6 +112,19 @@ export class Errors {
   }
 };
 
+/** Polyfill for SOFTPLUS */
+(Math as any).softplus = (Math as any).softplus || function(x) {
+  let threshold = 20;
+  let beta = 1;
+  if (x * beta > threshold) {
+    return x;
+  } else if (x === -Infinity) {
+    return 0;
+  } else {
+    return 1 / beta * (Math as any).log(1 + (Math as any).exp(beta * x));
+  }
+};
+
 /** Built-in activation functions */
 export class Activations {
   public static TANH: ActivationFunction = {
@@ -137,6 +152,14 @@ export class Activations {
   public static SINE: ActivationFunction = {
     output: x => (Math as any).sin(x),
     der: x => (Math as any).cos(x)
+  };
+  public static MISH: ActivationFunction = {
+    output: x => x * Activations.TANH.output((Math as any).softplus(x)),
+    der: x => {
+      let sig_x = Activations.SIGMOID.output(x);
+      let tanh_sp_x = Activations.TANH.output((Math as any).softplus(x));
+      return tanh_sp_x * x * sig_x * (1 - tanh_sp_x * tanh_sp_x);
+    }
   };
 }
 
