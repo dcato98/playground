@@ -4,15 +4,16 @@ The Neural Network Playground is an interactive visualization of neural networks
 
 ## Modifications from [original repo](https://github.com/tensorflow/playground)
 - added Sine and Mish activation functions
+- added support for on-the-fly changes to the regularization and regularization rate hyperparameters
 
 ## Development
 
 To run the visualization locally, run:
 - `npm i` to install dependencies
 - `npm run build` to compile the app and place it in the `dist/` directory
-- `npm run serve` to serve from the `dist/` directory and open a page on your browser.
+- `npm run serve` to serve from the `dist/` directory and open a page on your browser
 
-For a faster edit-refresh cycle when developing, run `npm run serve-watch`.
+For a faster edit-refresh cycle when developing, run `npm run serve-watch`
 
 ## For owners
-To push to production: `git subtree push --prefix dist origin gh-pages`.
+To push to production: `git subtree push --prefix dist origin gh-pages`
