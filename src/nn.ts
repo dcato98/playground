@@ -163,7 +163,7 @@ export class Activations {
   };
 }
 
-/** Build-in regularization functions */
+/** Built-in regularization functions */
 export class RegularizationFunction {
   public static L1: RegularizationFunction = {
     output: w => Math.abs(w),
@@ -203,12 +203,10 @@ export class Link {
    * @param regularization The regularization function that computes the
    *     penalty for this weight. If null, there will be no regularization.
    */
-  constructor(source: Node, dest: Node,
-      regularization: RegularizationFunction, initZero?: boolean) {
+  constructor(source: Node, dest: Node, initZero?: boolean) {
     this.id = source.id + "-" + dest.id;
     this.source = source;
     this.dest = dest;
-    this.regularization = regularization;
     if (initZero) {
       this.weight = 0;
     }
@@ -231,7 +229,6 @@ export class Link {
 export function buildNetwork(
     networkShape: number[], activation: ActivationFunction,
     outputActivation: ActivationFunction,
-    regularization: RegularizationFunction,
     inputIds: string[], initZero?: boolean): Node[][] {
   let numLayers = networkShape.length;
   let id = 1;
@@ -257,7 +254,7 @@ export function buildNetwork(
         // Add links from nodes in the previous layer to this node.
         for (let j = 0; j < network[layerIdx - 1].length; j++) {
           let prevNode = network[layerIdx - 1][j];
-          let link = new Link(prevNode, node, regularization, initZero);
+          let link = new Link(prevNode, node, initZero);
           prevNode.outputs.push(link);
           node.inputLinks.push(link);
         }
@@ -360,7 +357,7 @@ export function backProp(network: Node[][], target: number,
  * derivatives.
  */
 export function updateWeights(network: Node[][], learningRate: number,
-    regularizationRate: number) {
+    regularization: RegularizationFunction, regularizationRate: number) {
   for (let layerIdx = 1; layerIdx < network.length; layerIdx++) {
     let currentLayer = network[layerIdx];
     for (let i = 0; i < currentLayer.length; i++) {
@@ -377,8 +374,8 @@ export function updateWeights(network: Node[][], learningRate: number,
         if (link.isDead) {
           continue;
         }
-        let regulDer = link.regularization ?
-            link.regularization.der(link.weight) : 0;
+        let regulDer = regularization ?
+            regularization.der(link.weight) : 0;
         if (link.numAccumulatedDers > 0) {
           // Update the weight based on dE/dw.
           link.weight = link.weight -
@@ -386,7 +383,7 @@ export function updateWeights(network: Node[][], learningRate: number,
           // Further update the weight based on regularization.
           let newLinkWeight = link.weight -
               (learningRate * regularizationRate) * regulDer;
-          if (link.regularization === RegularizationFunction.L1 &&
+          if (regularization === RegularizationFunction.L1 &&
               link.weight * newLinkWeight < 0) {
             // The weight crossed 0 due to the regularization term. Set it to 0.
             link.weight = 0;
