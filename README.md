@@ -2,6 +2,9 @@
 
 The Neural Network Playground is an interactive visualization of neural networks, written in TypeScript using d3.js. Please use GitHub issues for questions, requests, and bugs. Your feedback is highly appreciated!
 
+## Modifications from [original repo](https://github.com/tensorflow/playground)
+- added Sine and Mish activation functions
+
 ## Development
 
 To run the visualization locally, run:
