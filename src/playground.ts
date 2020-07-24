@@ -52,6 +52,8 @@ const BIAS_SIZE = 5;
 const NUM_SAMPLES_CLASSIFY = 500;
 const NUM_SAMPLES_REGRESS = 1200;
 const DENSITY = 100;
+const HEATMAP_MIN = -6;
+const HEATMAP_MAX = 6;
 
 enum HoverType {
   BIAS, WEIGHT
@@ -153,7 +155,7 @@ state.getHiddenProps().forEach(prop => {
 let boundary: {[id: string]: number[][]} = {};
 let selectedNodeId: string = null;
 // Plot the heatmap.
-let xDomain: [number, number] = [-6, 6];
+let xDomain: [number, number] = [HEATMAP_MIN, HEATMAP_MAX];
 let heatMap =
     new HeatMap(300, DENSITY, xDomain, xDomain, d3.select("#heatmap"),
         {showAxes: true});
@@ -1039,7 +1041,7 @@ function hideControls() {
     controls.style("display", "none");
   });
 
-  // Also add checkbox for each hidable control in the "use it in classrom"
+  // Also add checkbox for each hidable control in the "use it in classroom"
   // section.
   let hideControls = d3.select(".hide-controls");
   HIDABLE_CONTROLS.forEach(([text, id]) => {
@@ -1078,6 +1080,9 @@ function generateData(firstTime = false) {
   Math.seedrandom(state.seed);
   let numSamples = (state.problem === Problem.REGRESSION) ?
       NUM_SAMPLES_REGRESS : NUM_SAMPLES_CLASSIFY;
+  if (state.dataset === datasets.three) {
+    numSamples = NUM_SAMPLES_CLASSIFY * 2
+  }
   let generator = state.problem === Problem.CLASSIFICATION ?
       state.dataset : state.regDataset;
   let data = generator(numSamples, state.noise / 100);
