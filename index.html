@@ -101,6 +101,7 @@ Modified by David Cato
             <option value="sigmoid">Sigmoid</option>
             <option value="linear">Linear</option>
             <option value="sine">Sine</option>
+            <option value="sine">Sinc</option>
             <option value="mish">Mish</option>
           </select>
         </div>
@@ -283,10 +284,9 @@ Modified by David Cato
       <div id="heatmap"></div>
       <div style="float:left;margin-top:20px">
         <div style="display:flex; align-items:center;">
-
           <!-- Gradient color scale -->
           <div class="label" style="width:105px; margin-right: 10px">
-            Colors shows data, neuron and weight values.
+            Colors show data, neuron and weight values.
           </div>
           <svg width="150" height="30" id="colormap">
             <defs>

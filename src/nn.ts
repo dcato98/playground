@@ -153,6 +153,10 @@ export class Activations {
     output: x => (Math as any).sin(x),
     der: x => (Math as any).cos(x)
   };
+  public static SINC: ActivationFunction = {
+    output: x => x < 0.000001 ? 1 : (Math as any).sin(x) / x,
+    der: x => (x*x) < 0.000001 ? 0 : (x * (Math as any).cos(x) - (Math as any).sin(x)) / (x*x)
+  };
   public static MISH: ActivationFunction = {
     output: x => x * Activations.TANH.output((Math as any).softplus(x)),
     der: x => {
