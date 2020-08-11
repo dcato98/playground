@@ -69,6 +69,20 @@ export class Node {
     this.output = this.activation.output(this.totalInput);
     return this.output;
   }
+
+  compileToJs(): string {
+    // Stores total input into the node.
+    let js = this.bias.toPrecision(2) + "";
+    for (let j = 0; j < this.inputLinks.length; j++) {
+      let link = this.inputLinks[j];
+      js += ` + (${link.weight.toPrecision(2)} * ${link.source.compileToJsName()})`;
+    }
+    return this.activation.compileToJs(js);
+  }
+
+  compileToJsName(): string {
+    return "v" + this.id;
+  }
 }
 
 /**
@@ -83,6 +97,7 @@ export interface ErrorFunction {
 export interface ActivationFunction {
   output: (input: number) => number;
   der: (input: number) => number;
+  compileToJs: (arg: string) => string;
 }
 
 /** Function that computes a penalty cost for a given weight in the network. */
@@ -132,30 +147,36 @@ export class Activations {
     der: x => {
       let output = Activations.TANH.output(x);
       return 1 - output * output;
-    }
+    },
+    compileToJs: arg => `Math.tanh(${arg})`
   };
   public static RELU: ActivationFunction = {
     output: x => Math.max(0, x),
-    der: x => x <= 0 ? 0 : 1
+    der: x => x <= 0 ? 0 : 1,
+    compileToJs: arg => `Math.max(0, ${arg})`
   };
   public static SIGMOID: ActivationFunction = {
     output: x => 1 / (1 + Math.exp(-x)),
     der: x => {
       let output = Activations.SIGMOID.output(x);
       return output * (1 - output);
-    }
+    },
+    compileToJs: arg => `(1 / (1 + Math.exp(-(${arg}))))`
   };
   public static LINEAR: ActivationFunction = {
     output: x => x,
-    der: x => 1
+    der: x => 1,
+    compileToJs: arg => arg
   };
   public static SINE: ActivationFunction = {
     output: x => (Math as any).sin(x),
-    der: x => (Math as any).cos(x)
+    der: x => (Math as any).cos(x),
+    compileToJs: arg => `Math.sin(${arg})`
   };
   public static SINC: ActivationFunction = {
     output: x => x < 0.000001 ? 1 : (Math as any).sin(x) / x,
-    der: x => (x*x) < 0.000001 ? 0 : (x * (Math as any).cos(x) - (Math as any).sin(x)) / (x*x)
+    der: x => (x*x) < 0.000001 ? 0 : (x * (Math as any).cos(x) - (Math as any).sin(x)) / (x*x),
+    compileToJs: arg => `Math.sinc(${arg})`
   };
   public static MISH: ActivationFunction = {
     output: x => x * Activations.TANH.output((Math as any).softplus(x)),
@@ -163,7 +184,8 @@ export class Activations {
       let sig_x = Activations.SIGMOID.output(x);
       let tanh_sp_x = Activations.TANH.output((Math as any).softplus(x));
       return tanh_sp_x * x * sig_x * (1 - tanh_sp_x * tanh_sp_x);
-    }
+    },
+    compileToJs: arg => `mish(${arg})`
   };
 }
 
@@ -420,4 +442,19 @@ export function forEachNode(network: Node[][], ignoreInputs: boolean,
 /** Returns the output node in the network. */
 export function getOutputNode(network: Node[][]) {
   return network[network.length - 1][0];
+}
+
+export function compileNetworkToJs(network: Node[][]): string {
+  const inputLayer = network[0];
+  let js = `function(${inputLayer.map(node => node.compileToJsName()).join(", ")}) {\n`;  
+  for (let layerIdx = 1; layerIdx < network.length; layerIdx++) {
+    let currentLayer = network[layerIdx];
+    for (let i = 0; i < currentLayer.length; i++) {
+      let node = currentLayer[i];
+      js += `  const ${node.compileToJsName()} = ${node.compileToJs()};\n`;
+    }
+  }
+  js += `  return ${network[network.length - 1][0].compileToJsName()};\n`;
+  js += `}`;
+  return js;
 }

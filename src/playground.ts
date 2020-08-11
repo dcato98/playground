@@ -658,6 +658,9 @@ function drawNetwork(network: nn.Node[][]): void {
     getRelativeHeight(d3.select("#network"))
   );
   d3.select(".column.features").style("height", height + "px");
+
+  // Now "draw" it as JavaScript
+  d3.select("#network-as-javascript").text(nn.compileNetworkToJs(network));
 }
 
 function getRelativeHeight(selection) {
@@ -890,6 +893,9 @@ function updateUI(firstStep = false) {
   d3.select("#loss-test").text(humanReadable(lossTest));
   d3.select("#iter-number").text(addCommas(zeroPad(iter)));
   lineChart.addDataPoint([lossTrain, lossTest]);
+
+  // Now "draw" it as JavaScript
+  d3.select("#network-as-javascript").text(nn.compileNetworkToJs(network));
 }
 
 function constructInputIds(): string[] {
