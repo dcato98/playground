@@ -170,11 +170,13 @@ export class Activations {
   };
   public static SINE: ActivationFunction = {
     output: x => (Math as any).sin(x),
-    der: x => (Math as any).cos(x)
+    der: x => (Math as any).cos(x),
+    compileToJs: arg => `Math.sin(${arg})`
   };
   public static SINC: ActivationFunction = {
     output: x => x < 0.000001 ? 1 : (Math as any).sin(x) / x,
-    der: x => (x*x) < 0.000001 ? 0 : (x * (Math as any).cos(x) - (Math as any).sin(x)) / (x*x)
+    der: x => (x*x) < 0.000001 ? 0 : (x * (Math as any).cos(x) - (Math as any).sin(x)) / (x*x),
+    compileToJs: arg => `Math.sinc(${arg})`
   };
   public static MISH: ActivationFunction = {
     output: x => x * Activations.TANH.output((Math as any).softplus(x)),
@@ -182,7 +184,8 @@ export class Activations {
       let sig_x = Activations.SIGMOID.output(x);
       let tanh_sp_x = Activations.TANH.output((Math as any).softplus(x));
       return tanh_sp_x * x * sig_x * (1 - tanh_sp_x * tanh_sp_x);
-    }
+    },
+    compileToJs: arg => `mish(${arg})`
   };
 }
 
