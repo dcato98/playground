@@ -39,6 +39,15 @@ export let regularizations: {[key: string]: nn.RegularizationFunction} = {
   "L2": nn.RegularizationFunction.L2
 };
 
+/** Whether to quantize the weights. */
+export let weightQuantizations: {[key: string]: nn.WeightQuantizationFunction} = {
+  "none": null,
+  "16-bit": nn.WeightQuantizationFunction.q16bit,
+  "8-bit": nn.WeightQuantizationFunction.q8bit,
+  "4-bit": nn.WeightQuantizationFunction.q4bit,
+  "2-bit": nn.WeightQuantizationFunction.q2bit
+};
+
 /** A map between dataset names and functions that generate classification data. */
 export let datasets: {[key: string]: dataset.DataGenerator} = {
   "circle": dataset.classifyCircleData,
@@ -112,6 +121,7 @@ export class State {
   private static PROPS: Property[] = [
     {name: "activation", type: Type.OBJECT, keyMap: activations},
     {name: "regularization", type: Type.OBJECT, keyMap: regularizations},
+    {name: "weightQuantization", type: Type.OBJECT, keyMap: weightQuantizations},
     {name: "batchSize", type: Type.NUMBER},
     {name: "dataset", type: Type.OBJECT, keyMap: datasets},
     {name: "regDataset", type: Type.OBJECT, keyMap: regDatasets},
@@ -150,6 +160,7 @@ export class State {
   percTrainData = 50;
   activation = nn.Activations.TANH;
   regularization: nn.RegularizationFunction = null;
+  weightQuantization: nn.WeightQuantizationFunction = null;
   problem = Problem.CLASSIFICATION;
   initZero = false;
   hideText = false;

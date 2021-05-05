@@ -16,6 +16,32 @@ Modified by David Cato
 ==============================================================================*/
 
 /**
+ * An error function and its derivative.
+ */
+export interface ErrorFunction {
+  error: (output: number, target: number) => number;
+  der: (output: number, target: number) => number;
+}
+
+/** A node's activation function and its derivative. */
+export interface ActivationFunction {
+  output: (input: number) => number;
+  der: (input: number) => number;
+  compileToJs: (arg: string) => string;
+}
+
+/** Function that computes a penalty cost for a given weight in the network. */
+export interface RegularizationFunction {
+  output: (weight: number) => number;
+  der: (weight: number) => number;
+}
+
+/** Function that quantizes a given weight in the network. */
+export interface WeightQuantizationFunction {
+  output: (weight: number) => number;
+}
+
+/**
  * A node in a neural network. Each node has a state
  * (total input, output, and their respectively derivatives) which changes
  * after every forward and back propagation run.
@@ -59,12 +85,13 @@ export class Node {
   }
 
   /** Recomputes the node's output and returns it. */
-  updateOutput(): number {
+  updateOutput(weightQuantizationFunction: WeightQuantizationFunction): number {
     // Stores total input into the node.
     this.totalInput = this.bias;
     for (let j = 0; j < this.inputLinks.length; j++) {
       let link = this.inputLinks[j];
-      this.totalInput += link.weight * link.source.output;
+      let weight = weightQuantizationFunction ? weightQuantizationFunction.output(link.weight) : link.weight
+      this.totalInput += weight * link.source.output;
     }
     this.output = this.activation.output(this.totalInput);
     return this.output;
@@ -83,27 +110,6 @@ export class Node {
   compileToJsName(): string {
     return "v" + this.id;
   }
-}
-
-/**
- * An error function and its derivative.
- */
-export interface ErrorFunction {
-  error: (output: number, target: number) => number;
-  der: (output: number, target: number) => number;
-}
-
-/** A node's activation function and its derivative. */
-export interface ActivationFunction {
-  output: (input: number) => number;
-  der: (input: number) => number;
-  compileToJs: (arg: string) => string;
-}
-
-/** Function that computes a penalty cost for a given weight in the network. */
-export interface RegularizationFunction {
-  output: (weight: number) => number;
-  der: (weight: number) => number;
 }
 
 /** Built-in error functions */
@@ -201,6 +207,22 @@ export class RegularizationFunction {
   };
 }
 
+/** Built-in weight quantization functions */
+export class WeightQuantizationFunction {
+  public static q16bit: WeightQuantizationFunction = {
+    output: w => (Math as any).round(w * 65536) / 65536
+  };
+  public static q8bit: WeightQuantizationFunction = {
+    output: w => (Math as any).round(w * 256) / 256
+  };
+  public static q4bit: WeightQuantizationFunction = {
+    output: w => (Math as any).round(w * 16) / 16
+  };
+  public static q2bit: WeightQuantizationFunction = {
+    output: w => (Math as any).round(w * 4) / 4
+  };
+}
+
 /**
  * A link in a neural network. Each link has a weight and a source and
  * destination node. Also it has an internal state (error derivative
@@ -219,15 +241,15 @@ export class Link {
   accErrorDer = 0;
   /** Number of accumulated derivatives since the last update. */
   numAccumulatedDers = 0;
-  regularization: RegularizationFunction;
+//   regularization: RegularizationFunction;
 
   /**
    * Constructs a link in the neural network initialized with random weight.
    *
    * @param source The source node.
    * @param dest The destination node.
-   * @param regularization The regularization function that computes the
-   *     penalty for this weight. If null, there will be no regularization.
+//    * @param regularization The regularization function that computes the
+//    *     penalty for this weight. If null, there will be no regularization.
    */
   constructor(source: Node, dest: Node, initZero?: boolean) {
     this.id = source.id + "-" + dest.id;
@@ -300,7 +322,8 @@ export function buildNetwork(
  *     nodes in the network.
  * @return The final output of the network.
  */
-export function forwardProp(network: Node[][], inputs: number[]): number {
+export function forwardProp(network: Node[][], inputs: number[], 
+    weightQuantizationFunction: WeightQuantizationFunction): number {
   let inputLayer = network[0];
   if (inputs.length !== inputLayer.length) {
     throw new Error("The number of inputs must match the number of nodes in" +
@@ -316,7 +339,7 @@ export function forwardProp(network: Node[][], inputs: number[]): number {
     // Update all the nodes in this layer.
     for (let i = 0; i < currentLayer.length; i++) {
       let node = currentLayer[i];
-      node.updateOutput();
+      node.updateOutput(weightQuantizationFunction);
     }
   }
   return network[network.length - 1][0].output;

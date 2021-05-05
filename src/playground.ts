@@ -22,6 +22,7 @@ import {
   activations,
   problems,
   regularizations,
+  weightQuantizations,
   getKeyFromValue,
   Problem
 } from "./state";
@@ -343,7 +344,6 @@ function makeGUI() {
       function() {
     state.regularization = regularizations[this.value];
     parametersChanged = true;
-    // reset();
     state.serialize();
     userHasInteracted();
   });
@@ -353,11 +353,20 @@ function makeGUI() {
   let regularRate = d3.select("#regularRate").on("change", function() {
     state.regularizationRate = +this.value;
     parametersChanged = true;
-    // reset();
     state.serialize();
     userHasInteracted();
   });
   regularRate.property("value", state.regularizationRate);
+
+  let weightQuantizationDropdown = d3.select("#weightQuantization").on("change", 
+      function() {
+    state.weightQuantization = weightQuantizations[this.value];
+    parametersChanged = true;
+    state.serialize();
+    userHasInteracted();
+  });
+  weightQuantizationDropdown.property("value",
+      getKeyFromValue(weightQuantizations, state.weightQuantization));
 
   let problem = d3.select("#problem").on("change", function() {
     state.problem = problems[this.value];
@@ -832,7 +841,7 @@ function updateDecisionBoundary(network: nn.Node[][], firstTime: boolean) {
       let x = xScale(i);
       let y = yScale(j);
       let input = constructInput(x, y);
-      nn.forwardProp(network, input);
+      nn.forwardProp(network, input, state.weightQuantization);
       nn.forEachNode(network, true, node => {
         boundary[node.id][i][j] = node.output;
       });
@@ -851,7 +860,7 @@ function getLoss(network: nn.Node[][], dataPoints: Example2D[]): number {
   for (let i = 0; i < dataPoints.length; i++) {
     let dataPoint = dataPoints[i];
     let input = constructInput(dataPoint.x, dataPoint.y);
-    let output = nn.forwardProp(network, input);
+    let output = nn.forwardProp(network, input, state.weightQuantization);
     loss += nn.Errors.SQUARE.error(output, dataPoint.label);
   }
   return loss / dataPoints.length;
@@ -922,7 +931,7 @@ function oneStep(): void {
   iter++;
   trainData.forEach((point, i) => {
     let input = constructInput(point.x, point.y);
-    nn.forwardProp(network, input);
+    nn.forwardProp(network, input, state.weightQuantization);
     nn.backProp(network, point.label, nn.Errors.SQUARE);
     if ((i + 1) % state.batchSize === 0) {
       nn.updateWeights(network, state.learningRate, state.regularization, state.regularizationRate);
